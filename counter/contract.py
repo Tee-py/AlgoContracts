@@ -12,12 +12,23 @@ def approval_program():
     handle_delete = Return(Int(1))
 
     scratchCount = ScratchVar(TealType.uint64)
-
-    handle_noop = Seq([
-        scratchCount.store(App.globalGet(Bytes("Count"))),
-        App.globalPut(Bytes("Count"), scratchCount.load() + Int(1)),
-        Return(Int(1))
-    ])
+    
+    handle_noop = Cond(
+        [And(
+            Global.group_size() == Int(2),
+            Gtxn[0].type_enum() == TxnType.ApplicationCall,
+            Gtxn[1].receiver() == Addr("4SRGIIKJPAGH2YBPBCPNGLQMG5FN72BQKKTZ3SZUXNKGGJLJN75NIRC26Q"),
+            Gtxn[1].amount() > Int(0)
+        ),
+        Seq([
+            scratchCount.store(App.globalGet(Bytes("Count"))),
+            App.globalPut(Bytes("Count"), scratchCount.load() + Int(1)),
+            Return(Int(1))
+        ])]
+    )
+    
+    
+    
 
     program = Cond(
         [Txn.application_id() == Int(0), handle_create],
